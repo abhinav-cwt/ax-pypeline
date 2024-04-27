@@ -36,7 +36,7 @@ namespace py = pybind11;
     }                                                                                                      \
   }
 
-struct _g_m3axpi_
+struct _g_ax_pypeline_
 {
     static AX_S32 g_isp_force_loop_exit;
     static CAMERA_T gCams[MAX_CAMERAS];
@@ -57,12 +57,12 @@ struct _g_m3axpi_
     AX_SNS_HDR_MODE_E eHdrMode = AX_SNS_LINEAR_MODE;
     COMMON_SYS_ARGS_T tCommonArgs = {0};
 
-    _g_m3axpi_() {
+    _g_ax_pypeline_() {
         init();
         load();
     }
 
-    ~_g_m3axpi_() {
+    ~_g_ax_pypeline_() {
         exit();
     }
 
@@ -325,7 +325,7 @@ struct _g_m3axpi_
 
             bRunJoint = 2;
         } else {
-            printf("\r\n[m3axpi.load]( check json file path : %s )\r\n\r\n", config_file.c_str());
+            printf("\r\n[ax_pypeline.load]( check json file path : %s )\r\n\r\n", config_file.c_str());
         }
 
         return bRunJoint;
@@ -418,42 +418,42 @@ struct _g_m3axpi_
         }
     }
 
-} g_m3axpi;
+} g_ax_pypeline;
 
-AX_S32 _g_m3axpi_::g_isp_force_loop_exit = 0;
-CAMERA_T _g_m3axpi_::gCams[MAX_CAMERAS];
-pthread_mutex_t _g_m3axpi_::g_forward_mutex = PTHREAD_MUTEX_INITIALIZER;
-pthread_mutex_t _g_m3axpi_::g_capture_mutex = PTHREAD_MUTEX_INITIALIZER;
-cv::Mat _g_m3axpi_::g_capture, _g_m3axpi_::g_display;
-std::queue<axdl_results_t> _g_m3axpi_::g_result_forward;
-pipeline_t _g_m3axpi_::pipelines[4];
-int _g_m3axpi_::bRunJoint = 0, _g_m3axpi_::bRunState = 0;
-void *_g_m3axpi_::gNpuModels = NULL;
-int _g_m3axpi_::sUserWidth = 640;
-int _g_m3axpi_::sUserHeight = 360;
+AX_S32 _g_ax_pypeline_::g_isp_force_loop_exit = 0;
+CAMERA_T _g_ax_pypeline_::gCams[MAX_CAMERAS];
+pthread_mutex_t _g_ax_pypeline_::g_forward_mutex = PTHREAD_MUTEX_INITIALIZER;
+pthread_mutex_t _g_ax_pypeline_::g_capture_mutex = PTHREAD_MUTEX_INITIALIZER;
+cv::Mat _g_ax_pypeline_::g_capture, _g_ax_pypeline_::g_display;
+std::queue<axdl_results_t> _g_ax_pypeline_::g_result_forward;
+pipeline_t _g_ax_pypeline_::pipelines[4];
+int _g_ax_pypeline_::bRunJoint = 0, _g_ax_pypeline_::bRunState = 0;
+void *_g_ax_pypeline_::gNpuModels = NULL;
+int _g_ax_pypeline_::sUserWidth = 640;
+int _g_ax_pypeline_::sUserHeight = 360;
 
-static void g_m3axpi_camera(int CameraWidth, int CameraHeight, int SysCase, int HdrMode, int FrameRate)
+static void g_ax_pypeline_camera(int CameraWidth, int CameraHeight, int SysCase, int HdrMode, int FrameRate)
 {
-    g_m3axpi.sUserWidth = CameraWidth;
-    g_m3axpi.sUserHeight = CameraHeight;
-    g_m3axpi.eSysCase = (COMMON_SYS_CASE_E)SysCase;
-    g_m3axpi.eHdrMode = (AX_SNS_HDR_MODE_E)HdrMode;
-    g_m3axpi.sFramerate = FrameRate;
-    g_m3axpi.init();
+    g_ax_pypeline.sUserWidth = CameraWidth;
+    g_ax_pypeline.sUserHeight = CameraHeight;
+    g_ax_pypeline.eSysCase = (COMMON_SYS_CASE_E)SysCase;
+    g_ax_pypeline.eHdrMode = (AX_SNS_HDR_MODE_E)HdrMode;
+    g_ax_pypeline.sFramerate = FrameRate;
+    g_ax_pypeline.init();
 }
 
-static void g_m3axpi_load(py::str CfgPath)
+static void g_ax_pypeline_load(py::str CfgPath)
 {
-    g_m3axpi.load(CfgPath.cast<std::string>());
+    g_ax_pypeline.load(CfgPath.cast<std::string>());
 }
 
-static void g_m3axpi_display(py::list img)
+static void g_ax_pypeline_display(py::list img)
 {
     if (img.size() != 4) return;
     int rows = img[0].cast<int>();
     int cols = img[1].cast<int>();
     int channel = img[2].cast<int>();
-    if (!g_m3axpi.bRunState || rows == 0 || cols == 0) return;
+    if (!g_ax_pypeline.bRunState || rows == 0 || cols == 0) return;
 
     AX_IMG_FORMAT_E format;
     int type;
@@ -474,7 +474,7 @@ static void g_m3axpi_display(py::list img)
     std::string tmp = img[3].cast<std::string>();
     cv::Mat src(rows, cols, type, (void *)tmp.c_str());
 
-    auto osd_pipe = &g_m3axpi.pipelines[0];
+    auto osd_pipe = &g_ax_pypeline.pipelines[0];
     axdl_canvas_t img_overlay = { src.data, src.cols, src.rows, channel };
     AX_IVPS_RGN_DISP_GROUP_S tDisp;
 
@@ -517,36 +517,36 @@ static void g_m3axpi_display(py::list img)
         ALOGE("AX_IVPS_RGN_Update fail, ret=0x%x, hChnRgn=%d", ret, osd_pipe->m_ivps_attr.n_osd_rgn_chn[0]);
     }
 
-    // CALC_FPS("g_m3axpi_display");
+    // CALC_FPS("g_ax_pypeline_display");
 }
 
-static py::list g_m3axpi_capture()
+static py::list g_ax_pypeline_capture()
 {
-    if (!g_m3axpi.bRunState) return py::list();
+    if (!g_ax_pypeline.bRunState) return py::list();
     py::list return_img;
-    pthread_mutex_lock(&g_m3axpi.g_capture_mutex);
-    if (g_m3axpi.g_capture.rows)
+    pthread_mutex_lock(&g_ax_pypeline.g_capture_mutex);
+    if (g_ax_pypeline.g_capture.rows)
     {
-        return_img.append(g_m3axpi.g_capture.rows);
-        return_img.append(g_m3axpi.g_capture.cols);
+        return_img.append(g_ax_pypeline.g_capture.rows);
+        return_img.append(g_ax_pypeline.g_capture.cols);
         return_img.append(3);
-        py::bytes tmp((char *)g_m3axpi.g_capture.data, g_m3axpi.g_capture.rows * g_m3axpi.g_capture.cols * 3);
+        py::bytes tmp((char *)g_ax_pypeline.g_capture.data, g_ax_pypeline.g_capture.rows * g_ax_pypeline.g_capture.cols * 3);
         return_img.append(tmp);
     }
-    pthread_mutex_unlock(&g_m3axpi.g_capture_mutex);
-    // CALC_FPS("g_m3axpi_capture");
+    pthread_mutex_unlock(&g_ax_pypeline.g_capture_mutex);
+    // CALC_FPS("g_ax_pypeline_capture");
     return return_img;
 }
 
-static py::dict g_m3axpi_forward()
+static py::dict g_ax_pypeline_forward()
 {
     py::dict result;
-    if (g_m3axpi.bRunState && g_m3axpi.bRunJoint && g_m3axpi.g_result_forward.size())
+    if (g_ax_pypeline.bRunState && g_ax_pypeline.bRunJoint && g_ax_pypeline.g_result_forward.size())
     {
-        pthread_mutex_lock(&g_m3axpi.g_forward_mutex);
-        axdl_results_t res = g_m3axpi.g_result_forward.front();
-        g_m3axpi.g_result_forward.pop();
-        pthread_mutex_unlock(&g_m3axpi.g_forward_mutex);
+        pthread_mutex_lock(&g_ax_pypeline.g_forward_mutex);
+        axdl_results_t res = g_ax_pypeline.g_result_forward.front();
+        g_ax_pypeline.g_result_forward.pop();
+        pthread_mutex_unlock(&g_ax_pypeline.g_forward_mutex);
 
         if (res.mModelType == 0) {
             return result;
@@ -658,17 +658,17 @@ static py::dict g_m3axpi_forward()
 #define STRINGIFY(x) #x
 #define MACRO_STRINGIFY(x) STRINGIFY(x)
 
-PYBIND11_MODULE(m3axpi, m) {
+PYBIND11_MODULE(ax_pypeline, ax) {
 
-    m.def("load", &g_m3axpi_load, py::arg("CfgPath"));
+    ax.def("set_config", &g_ax_pypeline_load, py::arg("CfgPath"));
 
-    m.def("camera", &g_m3axpi_camera, py::arg("CameraWidth") = 640, py::arg("CameraHeight") = 360, py::arg("SysCase") = 0, py::arg("HdrMode") = 1, py::arg("FrameRate") = 30);
+    ax.def("set_camera", &g_ax_pypeline_camera, py::arg("CameraWidth") = 640, py::arg("CameraHeight") = 360, py::arg("SysCase") = 0, py::arg("HdrMode") = 1, py::arg("FrameRate") = 30);
 
-    m.def("display", &g_m3axpi_display, py::arg("img") = py::list());
+    ax.def("display", &g_ax_pypeline_display, py::arg("img") = py::list());
 
-    m.def("capture", &g_m3axpi_capture);
+    ax.def("capture", &g_ax_pypeline_capture);
 
-    m.def("forward", &g_m3axpi_forward);
+    ax.def("forward", &g_ax_pypeline_forward);
 
-    m.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
+    ax.attr("__version__") = MACRO_STRINGIFY(VERSION_INFO);
 }

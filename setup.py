@@ -2,6 +2,7 @@
 # The MIT License (MIT)
 #
 # Copyright (c) 2022 junhuanchen（sipeed)
+# Copyright (c) 2024 Abhinav Bharti (CWT)
 #
 # Permission is hereby granted, free of charge, to any person obtaining a copy
 # of this software and associated documentation files (the "Software"), to deal
@@ -31,12 +32,12 @@ print('pipeline version: ', version)
 
 
 ext_modules = [
-    Pybind11Extension("m3axpi",
+    Pybind11Extension("ax-pypeline",
 
             include_dirs=[
                 '/opt/include', '/usr/include/opencv4/', '/usr/local/include/opencv4/',
             ],
-            sources= ["src/m3axpi.cpp"],
+            sources= ["src/ax_pypeline.cpp"],
             libraries=[
                 "opencv_videoio", "opencv_highgui", "opencv_core", "opencv_imgproc", "opencv_imgcodecs", "opencv_freetype", "opencv_freetype", "sample_vin_ivps_joint_vo_sipy"
             ],
@@ -51,12 +52,12 @@ ext_modules = [
 ]
 
 setup(
-    name="ax-pipeline-api",
+    name="ax-pypeline",
     version=version,
     license='MIT',
-    description="A Python API For wiki.sipeed.com/m3axpi Pipeline",
-    author="Juwan",
-    author_email="junhuanchen@qq.com",
+    description="A Python API For Axera Tech ax-pipeline",
+    author="Abhinav B",
+    author_email="abhinav@connectedworld.tech",
     long_description=open('README.md', 'r', encoding='UTF-8').read(),
     long_description_content_type='text/markdown',
     url="https://github.com/junhuanchen/ax-pipeline-api",

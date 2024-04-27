@@ -7,13 +7,9 @@ extern "C"
 #endif
 
 #define SAMPLE_MAX_BBOX_COUNT 64
-#define SAMPLE_MAX_FACE_BBOX_COUNT 64
-#define SAMPLE_MAX_YOLOV5_MASK_OBJ_COUNT 8
-#define SAMPLE_MAX_POSE_COUNT 3
+#define SAMPLE_MAX_MASK_OBJ_COUNT 8
 #define SAMPLE_OBJ_NAME_MAX_LEN 20
-#define SAMPLE_MAX_HAND_BBOX_COUNT 2
 #define SAMPLE_RINGBUFFER_CACHE_COUNT 8
-#define SAMPLE_FACE_FEAT_LEN 512
     typedef enum _MODEL_TYPE_E
     {
         MT_UNKNOWN = -1,
@@ -35,12 +31,22 @@ extern "C"
         MT_DET_YOLO_FASTBODY,
         MT_DET_SCRFD,
         MT_DET_YOLOV8,
+        MT_DET_YOLOV8_NATIVE,
         MT_DET_YOLOV8_SEG,
+        MT_DET_YOLOV8_SEG_NATIVE,
+        MT_DET_YOLOV8_POSE,
+        MT_DET_YOLOV8_POSE_NATIVE,
+        MT_DET_YOLO_NAS,
+        MT_DET_PPYOLOE,
         MT_DET_CROWD_COUNT,
 
         // segmentation
         MT_SEG = 0x20000,
         MT_SEG_PPHUMSEG,
+        MT_SEG_DINOV2,
+        MT_SEG_DINOV2_DEPTH,
+        MT_SEG_GLPDEPTH,
+        MT_SEG_DEPTH_ANYTHING,
 
         // instance segmentation
         MT_INSEG = 0x30000,
@@ -55,7 +61,23 @@ extern "C"
         MT_MLM_FACE_RECOGNITION,
         MT_MLM_VEHICLE_LICENSE_RECOGNITION,
 
+        MT_CUSTOM_MODEL = 0x50000,
+        MT_CLIP,
+        MT_OWLVIT,
+
+        MT_END,
     } MODEL_TYPE_E;
+
+    typedef enum _RUNNER_TYPE_E
+    {
+        RUNNER_UNKNOWN = MT_END,
+
+        RUNNER_AX620,
+        RUNNER_AX650,
+        RUNNER_AX620E,
+
+        RUNNER_END
+    } RUNNER_TYPE_E;
 
     typedef struct _bbox_t
     {
@@ -64,12 +86,12 @@ extern "C"
 
     typedef struct _point_t
     {
-        float x, y;
+        float x, y, score;
     } axdl_point_t;
 
     typedef struct _mat_t
     {
-        int w, h;
+        int w, h, c, s;
         unsigned char *data;
     } axdl_mat_t;
 
@@ -95,12 +117,14 @@ extern "C"
 
         int label;
         float prob;
+        long track_id;
         char objname[SAMPLE_OBJ_NAME_MAX_LEN];
     } axdl_object_t;
 
     typedef struct _results_t
     {
         int mModelType; // MODEL_TYPE_E
+        int bObjTrack;
         int nObjSize;
         axdl_object_t mObjects[SAMPLE_MAX_BBOX_COUNT];
 
@@ -121,6 +145,7 @@ extern "C"
     typedef struct _canvas_t
     {
         unsigned char *data;
+        unsigned long long dataphy;
         int width, height, channel;
     } axdl_canvas_t;
 
@@ -150,13 +175,29 @@ extern "C"
     int axdl_parse_param_init(char *json_file_path, void **pModels);
     void axdl_deinit(void **pModels);
 
+    /* set it like this in json file:
+    {
+        "SAMPLE_IVPS_ALGO_WIDTH": 960,
+        "SAMPLE_IVPS_ALGO_HEIGHT": 540
+    }
+    */
     int axdl_get_ivps_width_height(void *pModels, char *json_file_path, int *width_ivps, int *height_ivps);
+    int axdl_set_ivps_width_height(void *pModels, int width_ivps, int height_ivps);
     axdl_color_space_e axdl_get_color_space(void *pModels);
     int axdl_get_model_type(void *pModels);
+    /* set it like this in json file:
+    {
+        "SAMPLE_LETTER_BOX": false
+    }
+    */
+    int axdl_get_letterbox_enable(void *pModels);
 
     int axdl_inference(void *pModels, axdl_image_t *pstFrame, axdl_results_t *pResults);
 
     int axdl_draw_results(void *pModels, axdl_canvas_t *canvas, axdl_results_t *pResults, float fontscale, int thickness, int offset_x, int offset_y);
+    void axdl_native_osd_init(void *pModels, int chn, int chn_width, int chn_height, int max_num_rgn);
+    void *axdl_native_osd_get_handle(void *pModels, int chn);
+    int axdl_native_osd_draw_results(void *pModels, int chn, axdl_results_t *pResults, float fontscale, int thickness);
 #ifdef __cplusplus
 }
 #endif
